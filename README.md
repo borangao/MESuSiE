@@ -21,7 +21,7 @@ See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed docume
 
 ## Reproduce
 
-See [Repository](https://github.com/borangao/MESuSiE_Reproduce) for detailed documentation and examples.
+See [Repository](https://github.com/borangao/MESuSiE_Reproduce) for reproducing the simulation and real data analysis in the manuscript. 
 
 
 ## Online App
