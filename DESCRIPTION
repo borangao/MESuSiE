@@ -1,0 +1,23 @@
+Package: MESuSiE
+Type: Package
+Title: What the Package Does Using Title Case
+Version: 1.0
+Date: 2022-11-08
+Author: borangao
+Maintainer: borangao <borang@umich.edu>
+Description: More details about what the package does. See
+            <http://cran.r-project.org/doc/manuals/r-release/R-exts.html#The-DESCRIPTION-file> for details on
+            how to write this part.
+License: GPL (>= 2)
+Encoding: UTF-8
+RoxygenNote: 7.2.0
+Imports: 
+    cowplot,
+    ggplot2,
+    ggrepel,
+    Matrix,
+    nloptr,
+    progress,
+    R6,
+    Rcpp (>= 1.0.8.3)
+LinkingTo: Rcpp, RcppArmadillo
