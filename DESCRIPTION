@@ -21,3 +21,6 @@ Imports:
     R6,
     Rcpp (>= 1.0.8.3)
 LinkingTo: Rcpp, RcppArmadillo
+Depends: 
+    R (>= 2.10)
+LazyData: true
