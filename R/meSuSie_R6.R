@@ -69,7 +69,7 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
       
     }
 
-    pb$tick(tokens = list(iteration = iter))
+    #pb$tick(tokens = list(iteration = iter))
     
     updated_sigma2 = meSuSieObject_obj$update_residual_variance(meSuSieData_obj,iter)
     
