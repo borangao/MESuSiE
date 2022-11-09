@@ -19,9 +19,9 @@ they are not installed already.
 
 See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed documentation and examples.
 
-## Quick Start
+## Reproduce
 
-See [Reproduce](https://borangao.github.io/MESuSiE_Reproduce/) for detailed documentation and examples.
+See [Repository](https://borangao.github.io/MESuSiE_Reproduce/) for detailed documentation and examples.
 
 
 ## Online App
