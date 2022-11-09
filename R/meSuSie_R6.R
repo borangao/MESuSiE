@@ -42,7 +42,7 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
  # meSuSieObject_obj<-meSuSieObject$new(p,L,n_ancestry,residual_variance,prior_weights,optim_method,estimate_residual_variance,max_iter)
  
   cat("# Start data analysis \n")
-	 pb = progress_bar$new(format =paste(" :elapsed"),clear = TRUE,total = max_iter,show_after = 0)
+  #	 pb = progress_bar$new(format =paste(" :elapsed"),clear = TRUE,total = max_iter,show_after = 0)
   #  pb = progress_bar$new(format = paste("(Iteration = :iteration) :elapsed"),clear = TRUE,total = max_iter,show_after = 0)
   
   n_iter = 0
