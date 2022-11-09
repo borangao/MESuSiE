@@ -312,7 +312,7 @@ single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
   
   if(meSuSieObject_obj$estimate_prior_method =="optim"){
     
-    opt_par<-pre_optim(N_ancestry,-10,10)
+    opt_par<-pre_optim(N_ancestry,-30,10)
     
    # update_V<-optim(opt_par$inital_par,fn = loglik_cpp_R6,gr=NULL,betahat,shat2,meSuSieObject_obj$pi,opt_par$nancestry,opt_par$diag_index,method = "L-BFGS-B",lower=opt_par$lower_bound,upper=opt_par$upper_bound)
    if(N_ancestry==2){
