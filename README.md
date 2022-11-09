@@ -22,4 +22,4 @@ See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed docume
 
 ## Online App
 
-We also provide an online application of [meSuSie](https://borangao.shinyapps.io/meSuSie/). The toy data with the package can be provided to the app for an inital peak.
+We also provide an online application of [MESuSiE](https://borangao.shinyapps.io/meSuSie/). The toy data with the package can be provided to the app for an inital peak.
