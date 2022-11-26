@@ -2,7 +2,7 @@
 % Please edit documentation in R/meSuSie_R6.R
 \name{meSuSie_core}
 \alias{meSuSie_core}
-\title{meSuSie core function}
+\title{Multiple Ancestry Sum of Single Effects (MESuSiE) Regression}
 \usage{
 meSuSie_core(
   R_mat_list,
@@ -19,15 +19,91 @@ meSuSie_core(
 )
 }
 \arguments{
-\item{R_mat_list}{A list of length N ancestry with each elment being correlation matrix with dimension p*p, the column name of the correlation matrix should match to the order of SNP name in summary_stat_list}
+\item{R_mat_list}{A list of length N ancestry with each element being correlation matrix with dimension p*p, the column name of the correlation matrix should match to the order of SNP name in summary_stat_list}
 
-\item{summary_stat_list}{A list of length N ancestry with each elment being summary statistics. The minimum requirement of summary statistics contains columns of SNP, Beta, Se, Z, and N. The order of the SNP should match the order of the correlation matrix}
+\item{summary_stat_list}{A list of length N ancestry with each element being summary statistics. The minimum requirement of summary statistics contains columns of SNP, Beta, Se, Z, and N. 
+The order of the SNP should match the order of the correlation matrix. MESuSiE required either marginal z-scores and number of individuals from each ancestry, or marginal effect size (Beta) and standard error (Se) of each SNP to 
+be provides to reconstruct the sufficient statistics.}
 
-\item{L}{Number of effects supposed within the region}
+\item{L}{Maximum number of non-zero effects assumed within the region.}
+
+\item{residual_variance}{The residual variance (defaults to be a size N ancestry vector of 1).}
+
+\item{prior_weights}{A vector of length p giving the prior
+ probability that each element is non-zero.
+The default setting is that the prior weights are
+ the same for all variables.}
+
+\item{ancestry_weight}{A vector of length 2^{N ancestry}-1, with each element
+being the prior values for each causal configuration. Suppose there are two ancestries,
+the vector will be length 3, with element being p1, p2, and p12 which are the prior probability
+of being uniquely causal in the first ancestry, second ancestry, and causal in both ancestries. The
+summation of p1, p2, p12 is one. The default prior for the two ancestry setting is 3/7,3/7, and 1/7 to 
+encourage the finding of ancestry-specific causal variant}
+
+\item{estimate_residual_variance}{When
+\code{estimate_residual_variance = TRUE}, the residual variance is
+estimated; otherwise it is fixed.}
+
+\item{max_iter}{Maximum number of iterations to perform.}
+
+\item{cor_method}{The method to determine the 95% credible set using correlations among 
+SNPs in the region. The common used can be minimum/mean/median of absolute value of correlation
+The default is \code{cor_method = min_abs_corr}, which is the
+minimum of absolute value of correlation allowed in a credible set across ancestries, a commonly
+used threshold for genotype data in genetics studies.}
+
+\item{cor_threshold}{The threshold of min_abs_corr, defualt is 0.5}
+
+\item{prior_variance}{Can be either (1) a vector of length L, or a
+scalar, for scaled prior variance when Y is univariate (which
+should then be equivalent to \code{\link[susieR]{susie}}); or (2) a
+matrix for a simple multivariate regression; or (3) a mixture prior 
+from \code{\link{create_mixture_prior}}.}
+
+\item{estimate_prior_variance}{When \code{estimate_prior_variance =
+TRUE}, the prior variance is estimated; otherwise it is
+fixed. Currently \code{estimate_prior_variance = TRUE} only works
+for univariate Y, or for multivariate Y when the prior variance is
+a matrix).}
 }
 \value{
-An R6 object with pip, credible sets, and other features of the fine-mapping result.
+An R6 object with pip, credible sets, and other features of the fine-mapping result. 
+\item{pip}{Vector of posterior inclusion probabilities.}
+
+\item{pip_config}{Matrix of posterior inclusion probabilities with each column represents
+the PIP of corresponding causal configuration. Two ancestries, for eg, the columns represent the 
+PIP of being first ancestry-specific, second ancestry-specific, and shared.}
+
+\item{alpha}{A length L list of length p by number of causal configuration matrix of posterior inclusion probabilites, with each 
+column represents the PIP of a scenario.}
+
+\item{KL}{Vector of single-effect KL divergences.}
+
+\item{sigma2}{Residual variance.}
+
+\item{V}{A length L list of N ancestry by N ancestry prior variance estimate.}
+
+\item{elbo}{Vector storing the the evidence lower bound, or
+  \dQuote{ELBO}, achieved at each iteration of the model fitting
+  algorithm, which attempts to maximize the ELBO.}
+
+\item{cs}{Estimated credible sets.}
 }
 \description{
-meSuSie core function
+Performs a multiple ancestry sum of the single effects
+  regression of multiple ancestry phenotype Y on X.
+  That is, this function fits the regression model \deqn{Y = \sum_l X
+  b_l + e,} where the elements of \eqn{e} are \emph{i.i.d.} normal
+  with zero mean and variance \code{residual_variance}, and the sum
+  \eqn{\sum_l b_l} is a vector of L effects to be estimated. We
+  assumes that each \eqn{b_l} has exactly one non-zero
+  element. We extend the MESuSiE for summary statistics, take only summary statistics 
+  and LD correlation matrix as input.
+}
+\examples{
+library(MESuSiE)
+data(summary_stat_sd_list)
+data(R_mat_list)
+fit = meSuSie_core(R_mat_list,summary_stat_sd_list,L = 10)
 }
