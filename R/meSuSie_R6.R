@@ -1,6 +1,3 @@
-require(progress)
-require(R6)
-require(nloptr)
 #' @title Multiple Ancestry Sum of Single Effects (MESuSiE) Regression
 #' @description Performs a multiple ancestry sum of the single effects
 #'   regression of multiple ancestry phenotype Y on X.
@@ -85,6 +82,7 @@ require(nloptr)
 #' data(summary_stat_sd_list)
 #' data(R_mat_list)
 #' fit = meSuSie_core(R_mat_list,summary_stat_sd_list,L = 10)
+#' @import R6 nloptr Rcpp RcppArmadillo Matrix progress
 #' @export
 meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,prior_weights=NULL,ancestry_weight=NULL,optim_method ="optim",estimate_residual_variance =F,max_iter =100,cor_method ="min.abs.corr",cor_threshold=0.5){
   
@@ -101,6 +99,7 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
   
   n_snp = nrow(summary_stat_list[[1]])
   n_ancestry = length(summary_stat_list)
+  
   if(is.null(prior_weights)){
 	prior_weights = rep(1/n_snp,n_snp)
    }
@@ -116,12 +115,8 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
   }
   
   cat("# Create MESuSiE object \n")
-  meSuSieObject_obj<-meSuSieObject$new(n_snp,L,n_ancestry,residual_variance,used_weights,optim_method,estimate_residual_variance,max_iter)
- # meSuSieObject_obj<-meSuSieObject$new(p,L,n_ancestry,residual_variance,prior_weights,optim_method,estimate_residual_variance,max_iter)
- 
+  meSuSieObject_obj<-meSuSieObject$new(n_snp,L,n_ancestry,residual_variance,used_weights,optim_method,estimate_residual_variance,max_iter,names(summary_stat_list))
   cat("# Start data analysis \n")
-  #	 pb = progress_bar$new(format =paste(" :elapsed"),clear = TRUE,total = max_iter,show_after = 0)
-  #  pb = progress_bar$new(format = paste("(Iteration = :iteration) :elapsed"),clear = TRUE,total = max_iter,show_after = 0)
   
   n_iter = 0
   for (iter in 1:max_iter) {
@@ -136,19 +131,15 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
       SER_res<-single_effect_regression(comp_residual,meSuSieData_obj$XtX.diag, meSuSieObject_obj,l_index) 
       
       meSuSieObject_obj$par_update(SER_res,l_index)
-      
-	  
+      	  
       meSuSieObject_obj$compute_KL(SER_res,meSuSieObject_obj$compute_SER_posterior_loglik(meSuSieData_obj,comp_residual,SER_res$b1b2),l_index)
       
       meSuSieObject_obj$compute_Xr(meSuSieData_obj,SER_res$b1b2$EB1,l_index)
       
       comp_residual = comp_residual - meSuSieObject_obj$Xr[[l_index]]
-      
-      
+         
     }
 
-    #pb$tick(tokens = list(iteration = iter))
-    
     updated_sigma2 = meSuSieObject_obj$update_residual_variance(meSuSieData_obj,iter)
     
     if((meSuSieObject_obj$ELBO[iter+1] - meSuSieObject_obj$ELBO[iter])<0.001){
@@ -157,13 +148,13 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
     if(meSuSieObject_obj$estimate_residual_variance==TRUE){
       meSuSieObject_obj$sigma2 =  updated_sigma2
     }
-	# print(meSuSieObject_obj$sigma2)
     n_iter = n_iter + 1
     #check convergence and update sigma2
   }
 
   cat("\n# Data analysis is done, and now generates result \n\n")
   ###Use function in Utility to output result
+  
   meSuSieObject_obj$get_result(meSuSie_get_cs(meSuSieObject_obj,R_mat_list,cor_method=cor_method,cor_threshold=cor_threshold),meSusie_get_pip_either(meSuSieObject_obj),meSusie_get_pip_config(meSuSieObject_obj))
   meSuSieObject_obj$mesusie_summary(meSuSieData_obj)
 
@@ -172,30 +163,79 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
   return(meSuSieObject_obj)
 }
 
-#' @title MESuSiE Object
-#' @description Prepare MESuSiE object for analysis 
-#' @param  R_mat_list A list of length N ancestry with each element being correlation matrix with dimension p*p, the column name of the correlation matrix should match to the order of SNP name in summary_stat_list
-#' 
-#' @param  summary_stat_list A list of length N ancestry with each element being summary statistics. The minimum requirement of summary statistics contains columns of SNP, Beta, Se, Z, and N. 
-#' The order of the SNP should match the order of the correlation matrix. MESuSiE required either marginal z-scores and number of individuals from each ancestry, or marginal effect size (Beta) and standard error (Se) of each SNP to 
-#' be provides to reconstruct the sufficient statistics.  
-#' #' 
-#' @return An R6 object with initials for the MESuSiE analysis. 
+
+#' MESuSiE Object
+#'
+#' This object is designed to prepare the MESuSiE analysis.
+#'
+#' @name meSuSieObject
+#' @description An R6 object for handling MESuSiE analysis.
+#' @field name_config Character vector for names of the possible configurations.
+#' @field column_config List of possible configurations for columns.
+#' @field alpha List of alpha matrices for each component.
+#' @field mu1 List of mu1 matrices for each component.
+#' @field mu2 List of mu2 matrices for each component.
+#' @field EB1 List of EB1 matrices for each component.
+#' @field EB2 List of EB2 matrices for each component.
+#' @field Xr List of Xr matrices for each component.
+#' @field KL Numeric vector of KL values for each component.
+#' @field lbf Numeric vector of lbf values for each component.
+#' @field lbf_variable List of lbf values for each variable.
+#' @field ELBO Numeric vector of ELBO values for each iteration.
+#' @field sigma2 Numeric vector of residual variances.
+#' @field V List of V matrices for each component.
+#' @field pi Numeric vector of prior weights.
+#' @field estimate_prior_method Character string specifying the method to estimate prior.
+#' @field estimate_residual_variance Logical, if TRUE, the residual variance is estimated.
+#' @field L Integer for number of causal components.
+#' @field nSNP Integer for number of SNPs.
+#' @field nancestry Integer for number of ancestries.
+#' @field cs List of credible sets.
+#' @field pip Numeric vector of PIP values.
+#' @field pip_config Matrix of PIP values for each configuration.
+#'
+#' @description Initialize the MESuSiE object.
+#' @param p Integer, number of SNPs.
+#' @param L Integer, number of causal components.
+#' @param N_ancestry Integer, number of ancestries.
+#' @param residual_variance Numeric vector of initial residual variances.
+#' @param prior_weights Numeric vector of prior weights.
+#' @param estimate_prior_method Character string, method to estimate prior.
+#' @param estimate_residual_variance Logical, if TRUE, estimate the residual variance.
+#' @param max_iter Integer, maximum number of iterations.
+#' @param name_vec Character vector, names for configurations.
+#' @return A new `meSuSieObject` object.
+#'
+#' @description Compute the Xb for given b.
+#' @param meSuSie_Data List, MESuSiE data object.
+#' @param b Matrix, current estimate of b.
+#' @return A list of computed Xb matrices.
+#'
+#' @description Compute the residual.
+#' @param meSuSie_Data List, MESuSiE data object.
+#' @param meSuSie_Obj List, current MESuSiE object.
+#' @return Matrix of computed residuals.
+#'
+#' @description Update parameters from the SER results.
+#' @param SER_res List, results from the SER analysis.
+#' @param l_index Integer, index for the current component.
+#' @return Updated parameters in the `meSuSieObject` object.
+#' @import R6
 #' @export
 
-meSuSieObject <- R6Class("meSuSieObject",public = list(
-  initialize = function(p,L,N_ancestry, residual_variance,prior_weights,estimate_prior_method,estimate_residual_variance,max_iter){
+meSuSieObject <- R6::R6Class("meSuSieObject",public = list(
+  initialize = function(p,L,N_ancestry, residual_variance,prior_weights,estimate_prior_method,estimate_residual_variance,max_iter,name_vec){
     
-	self$name_config = Reduce(append , lapply(seq(1,N_ancestry),function(x){
-		poss_config = combn(1:N_ancestry,x)
+	self$name_config = Reduce(append , lapply(seq(1,length(name_vec)),function(x){
+		poss_config = combn(name_vec,x)
 		apply(poss_config,2,function(x)paste(x, collapse = '_'))
 	}))
-
 
 	self$column_config = Reduce(append,lapply(seq(1,N_ancestry),function(x){
 		poss_config = combn(1:N_ancestry,x)
 		lapply(1:ncol(poss_config), function(y)return(matrix(poss_config[,y])))
 	}))
+	
 	self$alpha =rep(list(matrix(0,nrow = p,ncol = N_ancestry)),L)
     self$mu1 = rep(list(lapply(self$column_config,function(x){matrix(0,nrow = p,ncol = length(x))})),L)
     self$mu2 = rep(list(lapply(self$column_config,function(x){matrix(0,nrow = p,ncol = length(x))})),L)
@@ -238,10 +278,7 @@ meSuSieObject <- R6Class("meSuSieObject",public = list(
     compute_Xr = function(meSuSie_Data,b1b2,l_index){
     self$Xr[[l_index]] = Reduce(cbind,lapply(1:self$nancestry,function(ancestry_index)meSuSie_Data$XtX_list[[ancestry_index]]%*%b1b2[,ancestry_index]))
   },
- # compute_Xr = function(meSuSie_Data,SER_res,l_index){
- #   self$Xr[[l_index]] = t(Reduce(cbind,lapply(1:self$nancestry,function(ancestry_index)meSuSie_Data$XtX_list[[ancestry_index]]%*%(SER_res$mu1_multi[,ancestry_index]*SER_res$alpha))))
- # },
-  
+
   par_update = function(SER_res,l_index){
     self$alpha[[l_index]]<-SER_res$alpha
     self$mu1[[l_index]]<-SER_res$mu1_multi
@@ -252,12 +289,7 @@ meSuSieObject <- R6Class("meSuSieObject",public = list(
 	self$EB2[[l_index]] =SER_res$b1b2$EB2
 	
   },
-#  compute_SER_posterior_loglik = function(meSuSie_Data,comp_residual,l_index){
- #   return(Reduce("+",lapply(1:self$nancestry,function(x){
- #     sum(-0.5/self$sigma2[[x]]*(-2*comp_residual*self$mu1[[l_index]][,x]*self$alpha[l_index,]+meSuSie_Data$XtX.diag[[x]]*self$mu2[[l_index]][,x]*self$alpha[l_index,]))
-#    })))
-    
- # },
+
    compute_SER_posterior_loglik = function(meSuSie_Data,comp_residual,b1b2){
     return(Reduce("+",lapply(1:self$nancestry,function(x){
       sum(-0.5/self$sigma2[[x]]*(-2*comp_residual[,x]*b1b2$EB1[,x]+meSuSie_Data$XtX.diag[[x]]*b1b2$EB2[,x]))
@@ -316,13 +348,14 @@ meSuSieObject <- R6Class("meSuSieObject",public = list(
     self$cs = cs
     self$pip = pip
 	self$pip_config = pip_config
+	colnames(self$pip_config) = self$name_config
   },
   mesusie_summary = function(meSuSie_Data){
     
     cat(c(paste0("Potential causal SNPs with PIP > 0.5: "),meSuSie_Data$Summary_Stat[[1]]$SNP[which(self$pip>0.5)],"\n\n"))
     cat("Credible sets for effects: \n")
     print(self$cs)
-    cat("\n Use meSusie_plot_pip() for Mahattan and PIP Plot")
+    cat("\n Use MESuSiE_Plot() for visualization")
 
   }
   
@@ -340,7 +373,27 @@ meSuSieObject <- R6Class("meSuSieObject",public = list(
 #  xty = diag(xtx)\beta
 #
 #############################################################
-meSuSieData <- R6Class("meSuSieData",public = list(
+#' meSuSieData R6 Class
+#' 
+#' This R6 class is designed to handle and process data relevant to the meSuSie approach.
+#' The class includes methods for initialization and processing XtX and XtY data structures.
+#' 
+#' @field R A list of data.
+#' @field Summary_Stat Summary statistics data.
+#' @field var_y Variance of y. Default is 1.
+#' @field Name_list List of names extracted from `R`.
+#' @field N_ancestry Number of ancestry elements in `X`.
+#' @field XtX.diag Diagonal elements of XtX.
+#' @field XtX_list Processed XtX list.
+#' @field Xty_list Processed XtY list.
+#' @field N_list List of median values of N from `Summary_Stat`.
+#' @field yty_list List of computed yty values.
+#' 
+#' @description The meSuSieData class is used for handling and processing data in the context
+#' of the meSuSie method.
+#' @import R6 
+#' @export
+meSuSieData <- R6::R6Class("meSuSieData",public = list(
   initialize = function(X,Y,var_y = 1){
     self$R<- X
     self$Summary_Stat <-Y
@@ -385,6 +438,7 @@ meSuSieData <- R6Class("meSuSieData",public = list(
   }
 ),
 lock_objects = F)
+
 single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
   column_config = meSuSieObject_obj$column_config
   N_ancestry = meSuSieObject_obj$nancestry
@@ -398,47 +452,33 @@ single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
   
   betahat = shat2 * Xty_standardized
   
-  if(meSuSieObject_obj$estimate_prior_method =="optim"){
-    
-    opt_par<-pre_optim(N_ancestry,-30,10)
-    
-   # update_V<-optim(opt_par$inital_par,fn = loglik_cpp_R6,gr=NULL,betahat,shat2,meSuSieObject_obj$pi,opt_par$nancestry,opt_par$diag_index,method = "L-BFGS-B",lower=opt_par$lower_bound,upper=opt_par$upper_bound)
-   if(N_ancestry==2){
-     
-     update_V<-optim(opt_par$inital_par,fn = test_run_loglik_cpp,gr=NULL,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list =column_config,method = "L-BFGS-B",lower=opt_par$lower_bound,upper=opt_par$upper_bound)
-    V_mat = vec_to_cov(update_V$par,opt_par$diag_index, opt_par$nancestry)
-     
-   }else{
-     intermediate_V<-nloptr(opt_par$inital_par, eval_f=test_run_loglik_cpp,eval_grad_f = NULL,lb = opt_par$lower_bound,ub = opt_par$upper_bound,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list =column_config,opts=list("algorithm"= "NLOPT_GN_DIRECT_L","xtol_rel"=1.0e-10))
-     update_V<-nloptr(intermediate_V$solution, eval_f=test_run_loglik_cpp,eval_grad_f = NULL,lb = opt_par$lower_bound,ub = opt_par$upper_bound,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list=column_config,opts=list("algorithm"= "NLOPT_LN_BOBYQA","xtol_rel"=1.0e-10))
-     V_mat = vec_to_cov(update_V$solution,opt_par$diag_index, opt_par$nancestry)
-     
-   }
-	 
+  if(meSuSieObject_obj$estimate_prior_method =="optim"){    
+	opt_par<-pre_optim(N_ancestry,-30,10)		
+	if(N_ancestry==2){		 
+		update_V<-optim(opt_par$inital_par,fn = loglik_cpp,gr=NULL,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list =column_config,method = "L-BFGS-B",lower=opt_par$lower_bound,upper=opt_par$upper_bound)
+		V_mat = vec_to_cov(update_V$par,opt_par$diag_index, opt_par$nancestry)	 
+	}else{
+		intermediate_V<-nloptr(opt_par$inital_par, eval_f=loglik_cpp,eval_grad_f = NULL,lb = opt_par$lower_bound,ub = opt_par$upper_bound,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list =column_config,opts=list("algorithm"= "NLOPT_GN_DIRECT_L","xtol_rel"=1.0e-10))
+		update_V<-nloptr(intermediate_V$solution, eval_f=loglik_cpp,eval_grad_f = NULL,lb = opt_par$lower_bound,ub = opt_par$upper_bound,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list=column_config,opts=list("algorithm"= "NLOPT_LN_BOBYQA","xtol_rel"=1.0e-10))
+		V_mat = vec_to_cov(update_V$solution,opt_par$diag_index, opt_par$nancestry) 
+	}
+}
 
-  }
-  
-#  V_mat = vec_to_cov(update_V$par,opt_par$diag_index, opt_par$nancestry)
- # V_mat = vec_to_cov(update_V$solution,opt_par$diag_index, opt_par$nancestry)
-  column_config = meSuSieObject_obj$column_config
-  #multivariate_out<-multivariate_regression(Xty_standardized,shat2,V_mat) 
- # multivariate_out<-mvlmm_reg(betahat,shat2,V_mat) 
   reg_out<-lapply(column_config,function(x){
 	if(length(x)==1){
 		uni_reg(betahat[,x],shat2[,x],V_mat[x,x])
 	}else if(length(x)>1){
 		mvlmm_reg(betahat[,x],shat2[,x],V_mat[x,x]) 
-	}
-})
+		}
+	})
 
-  lbf<-Reduce(cbind,lapply(reg_out,function(x)x$lbf))
-  lbf[is.na(lbf)]<-0
-  
-  softmax_out<-compute_softmax(lbf,meSuSieObject_obj$pi)
-
+	lbf<-Reduce(cbind,lapply(reg_out,function(x)x$lbf))
+	lbf[is.na(lbf)]<-0
+	softmax_out<-compute_softmax(lbf,meSuSieObject_obj$pi)
 	mu1_multi = lapply(reg_out,function(x)x$post_mean)
 	mu2_multi = lapply(reg_out,function(x)x$post_mean2)
 	b1b2 = compute_b1b2(softmax_out$alpha_wmulti,mu1_multi,mu2_multi,column_config,ncol(betahat),nrow(betahat))
+	
   return(list(alpha = softmax_out$alpha_wmulti,mu1_multi = mu1_multi,mu2_multi = mu2_multi,lbf_multi = lbf,V = V_mat,loglik =softmax_out$loglik,b1b2 = b1b2))
 }
 

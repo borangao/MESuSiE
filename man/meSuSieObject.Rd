@@ -4,10 +4,129 @@
 \alias{meSuSieObject}
 \title{MESuSiE Object}
 \value{
-An R6 object with initials for the MESuSiE analysis.
+A new `meSuSieObject` object.
+
+A list of computed Xb matrices.
+
+Matrix of computed residuals.
+
+Updated parameters in the `meSuSieObject` object.
 }
 \description{
-Prepare MESuSiE object for analysis
+An R6 object for handling MESuSiE analysis.
+
+Initialize the MESuSiE object.
+
+Compute the Xb for given b.
+
+Compute the residual.
+
+Update parameters from the SER results.
+}
+\details{
+This object is designed to prepare the MESuSiE analysis.
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{name_config}}{Character vector for names of the possible configurations.}
+
+\item{\code{column_config}}{List of possible configurations for columns.}
+
+\item{\code{alpha}}{List of alpha matrices for each component.}
+
+\item{\code{mu1}}{List of mu1 matrices for each component.}
+
+\item{\code{mu2}}{List of mu2 matrices for each component.}
+
+\item{\code{EB1}}{List of EB1 matrices for each component.}
+
+\item{\code{EB2}}{List of EB2 matrices for each component.}
+
+\item{\code{Xr}}{List of Xr matrices for each component.}
+
+\item{\code{KL}}{Numeric vector of KL values for each component.}
+
+\item{\code{lbf}}{Numeric vector of lbf values for each component.}
+
+\item{\code{lbf_variable}}{List of lbf values for each variable.}
+
+\item{\code{ELBO}}{Numeric vector of ELBO values for each iteration.}
+
+\item{\code{sigma2}}{Numeric vector of residual variances.}
+
+\item{\code{V}}{List of V matrices for each component.}
+
+\item{\code{pi}}{Numeric vector of prior weights.}
+
+\item{\code{estimate_prior_method}}{Character string specifying the method to estimate prior.}
+
+\item{\code{estimate_residual_variance}}{Logical, if TRUE, the residual variance is estimated.}
+
+\item{\code{L}}{Integer for number of causal components.}
+
+\item{\code{nSNP}}{Integer for number of SNPs.}
+
+\item{\code{nancestry}}{Integer for number of ancestries.}
+
+\item{\code{cs}}{List of credible sets.}
+
+\item{\code{pip}}{Numeric vector of PIP values.}
+
+\item{\code{pip_config}}{Matrix of PIP values for each configuration.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{name_config}}{Character vector for names of the possible configurations.}
+
+\item{\code{column_config}}{List of possible configurations for columns.}
+
+\item{\code{alpha}}{List of alpha matrices for each component.}
+
+\item{\code{mu1}}{List of mu1 matrices for each component.}
+
+\item{\code{mu2}}{List of mu2 matrices for each component.}
+
+\item{\code{EB1}}{List of EB1 matrices for each component.}
+
+\item{\code{EB2}}{List of EB2 matrices for each component.}
+
+\item{\code{Xr}}{List of Xr matrices for each component.}
+
+\item{\code{KL}}{Numeric vector of KL values for each component.}
+
+\item{\code{lbf}}{Numeric vector of lbf values for each component.}
+
+\item{\code{lbf_variable}}{List of lbf values for each variable.}
+
+\item{\code{ELBO}}{Numeric vector of ELBO values for each iteration.}
+
+\item{\code{sigma2}}{Numeric vector of residual variances.}
+
+\item{\code{V}}{List of V matrices for each component.}
+
+\item{\code{pi}}{Numeric vector of prior weights.}
+
+\item{\code{estimate_prior_method}}{Character string specifying the method to estimate prior.}
+
+\item{\code{estimate_residual_variance}}{Logical, if TRUE, the residual variance is estimated.}
+
+\item{\code{L}}{Integer for number of causal components.}
+
+\item{\code{nSNP}}{Integer for number of SNPs.}
+
+\item{\code{nancestry}}{Integer for number of ancestries.}
+
+\item{\code{cs}}{List of credible sets.}
+
+\item{\code{pip}}{Numeric vector of PIP values.}
+
+\item{\code{pip_config}}{Matrix of PIP values for each configuration.}
+}
+\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -38,10 +157,34 @@ Prepare MESuSiE object for analysis
   prior_weights,
   estimate_prior_method,
   estimate_residual_variance,
-  max_iter
+  max_iter,
+  name_vec
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{p}}{Integer, number of SNPs.}
+
+\item{\code{L}}{Integer, number of causal components.}
+
+\item{\code{N_ancestry}}{Integer, number of ancestries.}
+
+\item{\code{residual_variance}}{Numeric vector of initial residual variances.}
+
+\item{\code{prior_weights}}{Numeric vector of prior weights.}
+
+\item{\code{estimate_prior_method}}{Character string, method to estimate prior.}
+
+\item{\code{estimate_residual_variance}}{Logical, if TRUE, estimate the residual variance.}
+
+\item{\code{max_iter}}{Integer, maximum number of iterations.}
+
+\item{\code{name_vec}}{Character vector, names for configurations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-compute_Xb"></a>}}
@@ -51,6 +194,17 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$compute_Xb(meSuSie_Data, b)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{b}}{Matrix, current estimate of b.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-compute_residual"></a>}}
@@ -60,6 +214,17 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$compute_residual(meSuSie_Data, meSuSie_Obj)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Obj}}{List, current MESuSiE object.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-compute_Xr"></a>}}
@@ -69,6 +234,17 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$compute_Xr(meSuSie_Data, b1b2, l_index)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{l_index}}{Integer, index for the current component.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-par_update"></a>}}
@@ -78,6 +254,15 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$par_update(SER_res, l_index)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{SER_res}}{List, results from the SER analysis.}
+
+\item{\code{l_index}}{Integer, index for the current component.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-compute_SER_posterior_loglik"></a>}}
@@ -87,6 +272,15 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$compute_SER_posterior_loglik(meSuSie_Data, comp_residual, b1b2)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-compute_KL"></a>}}
@@ -96,6 +290,15 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$compute_KL(SER_res, value, l_index)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{SER_res}}{List, results from the SER analysis.}
+
+\item{\code{l_index}}{Integer, index for the current component.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-update_residual_variance"></a>}}
@@ -105,6 +308,15 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$update_residual_variance(meSuSie_Data, niter)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-get_result"></a>}}
@@ -123,6 +335,15 @@ Prepare MESuSiE object for analysis
 \if{html}{\out{<div class="r">}}\preformatted{meSuSieObject$mesusie_summary(meSuSie_Data)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+
+\item{\code{meSuSie_Data}}{List, MESuSiE data object.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-meSuSieObject-clone"></a>}}

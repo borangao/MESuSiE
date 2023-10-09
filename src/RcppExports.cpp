@@ -11,19 +11,20 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// loglik_cpp_R6
-double loglik_cpp_R6(arma::vec V, const arma::mat& betahat, const arma::mat& shat2, const arma::vec& prior_weight, const int nancestry, arma::uvec diag_index);
-RcppExport SEXP _MESuSiE_loglik_cpp_R6(SEXP VSEXP, SEXP betahatSEXP, SEXP shat2SEXP, SEXP prior_weightSEXP, SEXP nancestrySEXP, SEXP diag_indexSEXP) {
+// loglik_cpp
+double loglik_cpp(arma::vec V, const arma::mat& betahat, const arma::mat& shat2, const arma::mat& prior_weight, const int nancestry, arma::uvec diag_index, Rcpp::List config_list);
+RcppExport SEXP _MESuSiE_loglik_cpp(SEXP VSEXP, SEXP betahatSEXP, SEXP shat2SEXP, SEXP prior_weightSEXP, SEXP nancestrySEXP, SEXP diag_indexSEXP, SEXP config_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type V(VSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type betahat(betahatSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type shat2(shat2SEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type prior_weight(prior_weightSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_weight(prior_weightSEXP);
     Rcpp::traits::input_parameter< const int >::type nancestry(nancestrySEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type diag_index(diag_indexSEXP);
-    rcpp_result_gen = Rcpp::wrap(loglik_cpp_R6(V, betahat, shat2, prior_weight, nancestry, diag_index));
+    Rcpp::traits::input_parameter< Rcpp::List >::type config_list(config_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglik_cpp(V, betahat, shat2, prior_weight, nancestry, diag_index, config_list));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -40,28 +41,10 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// test_run_loglik_cpp
-double test_run_loglik_cpp(arma::vec V, const arma::mat& betahat, const arma::mat& shat2, const arma::mat& prior_weight, const int nancestry, arma::uvec diag_index, Rcpp::List config_list);
-RcppExport SEXP _MESuSiE_test_run_loglik_cpp(SEXP VSEXP, SEXP betahatSEXP, SEXP shat2SEXP, SEXP prior_weightSEXP, SEXP nancestrySEXP, SEXP diag_indexSEXP, SEXP config_listSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type V(VSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type betahat(betahatSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type shat2(shat2SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type prior_weight(prior_weightSEXP);
-    Rcpp::traits::input_parameter< const int >::type nancestry(nancestrySEXP);
-    Rcpp::traits::input_parameter< arma::uvec >::type diag_index(diag_indexSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type config_list(config_listSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_run_loglik_cpp(V, betahat, shat2, prior_weight, nancestry, diag_index, config_list));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MESuSiE_loglik_cpp_R6", (DL_FUNC) &_MESuSiE_loglik_cpp_R6, 6},
+    {"_MESuSiE_loglik_cpp", (DL_FUNC) &_MESuSiE_loglik_cpp, 7},
     {"_MESuSiE_mvlmm_reg", (DL_FUNC) &_MESuSiE_mvlmm_reg, 3},
-    {"_MESuSiE_test_run_loglik_cpp", (DL_FUNC) &_MESuSiE_test_run_loglik_cpp, 7},
     {NULL, NULL, 0}
 };
 
