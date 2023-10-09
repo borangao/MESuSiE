@@ -79,9 +79,9 @@
 #' \item{cs}{Estimated credible sets.}
 #' @examples
 #' library(MESuSiE)
-#' data(summary_stat_sd_list)
-#' data(R_mat_list)
-#' fit = meSuSie_core(R_mat_list,summary_stat_sd_list,L = 10)
+#' data(summ_stat_list)
+#' data(LD_list)
+#' fit = meSuSie_core(LD_list,summ_stat_list,L = 10)
 #' @import R6 nloptr Rcpp RcppArmadillo Matrix progress
 #' @export
 meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,prior_weights=NULL,ancestry_weight=NULL,optim_method ="optim",estimate_residual_variance =F,max_iter =100,cor_method ="min.abs.corr",cor_threshold=0.5){

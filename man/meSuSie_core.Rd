@@ -103,7 +103,7 @@ Performs a multiple ancestry sum of the single effects
 }
 \examples{
 library(MESuSiE)
-data(summary_stat_sd_list)
-data(R_mat_list)
-fit = meSuSie_core(R_mat_list,summary_stat_sd_list,L = 10)
+data(summ_stat_list)
+data(LD_list)
+fit = meSuSie_core(LD_list,summ_stat_list,L = 10)
 }

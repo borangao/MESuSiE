@@ -64,7 +64,7 @@ double loglik_cpp(arma::vec V, const arma::mat& betahat, const arma::mat& shat2,
 	// Find the maximum LBF across all configurations
 	double maxlbf = lbf_mat.max();
 	// Compute weights for each configuration using maxlbf
-	arma:mat w_multi = exp(lbf_mat - maxlbf)%prior_weight;
+	arma::mat w_multi = exp(lbf_mat - maxlbf)%prior_weight;
 	// Calculate the weighted sum of the weights
 	double weighted_sum_w = accu(w_multi);
 	// Compute the overall log Bayes factor for the model
