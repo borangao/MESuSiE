@@ -1,7 +1,9 @@
 # MESuSiE
 
 Multiple Ancestry Sum of Single Effect Model for the identification of shared and unique signals in GWAS fine-mapping
-  
+
+![](MESuSiE_Overview.png)
+
 ## Installation
 
 To install the latest version of the MESuSiE package from GitHub, run
