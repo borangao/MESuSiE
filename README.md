@@ -21,9 +21,6 @@ See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed docume
 
 ## Reproduce
 
-See [Repository](https://github.com/borangao/MESuSiE_Reproduce) for reproducing the simulation and real data analysis in the manuscript. 
+See [Repository](https://zenodo.org/deposit/8411004#) for reproducing the simulation and real data analysis in the manuscript. 
 
 
-## Online App
-
-We also provide an online application of [MESuSiE](https://borangao.shinyapps.io/meSuSie/). The toy data with the package can be provided to the app for an inital peak.
