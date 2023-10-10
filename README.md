@@ -5,7 +5,7 @@
 ![](MESuSiE_Overview.png)
 
 MESuSiE relies on GWAS summary statistics from multiple ancestries, properly accounts for the LD structure of the local genomic region in multiple ancestries, and explicitly models both shared and ancestry-specific causal signals to accommodate causal effect size similarity as well as heterogeneity across ancestries. MESuSiE outputs posterior inclusion probability of variant being shared or ancestry-specific causal variants. 
-MESuSiE is implemented as an open-source R package, freely available at [Zhou lab](www.xzlab.org/software.html).
+MESuSiE is implemented as an open-source R package, freely available at [Zhou lab](https://www.xzlab.org/software.html).
 
 ## Installation
 
