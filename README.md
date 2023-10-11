@@ -26,7 +26,7 @@ See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed docume
 
 ## Reproduce
 
-See [Repository](https://zenodo.org/deposit/8411004#) for reproducing the simulation and real data analysis in the manuscript. 
+See [Repository](https://doi.org/10.5281/zenodo.8411004) for reproducing the simulation and real data analysis in the manuscript. 
 
 
 ## Issues
