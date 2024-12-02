@@ -26,36 +26,58 @@
 #' @import dplyr
 #' @export
 
-GWAS_QC <- function(dat, MAF_threshold) { 
-	# CHR, POS , CHR_POS, REF, ALT, and MAF are required for QC
+GWAS_QC <- function(dat, MAF_threshold, rm_strand = TRUE, rm_multi = TRUE, rm_indel = TRUE, rm_mhc = TRUE,rm_maf = TRUE) { 
+  # Column name to uppers
+  colnames(dat) <- toupper(colnames(dat))
+  # Check if required columns are present and to upper
+  if(!all(c("CHR", "POS", "REF", "ALT") %in% colnames(dat))) {
+    stop("Required columns 'CHR', 'POS', 'REF', and 'ALT' are missing.")
+  }
+  
+  dat <- dat %>% 
+    mutate(CHR_POS = paste0(CHR, "_", POS))
+	# CHR, POS, REF, ALT, and MAF are required for QC
 	# QC Step 1: Remove Strand Ambiguous Variants
 	# These are SNPs that can't be differentiated based on the strand and may introduce errors.
-	dat <- dat %>%
-	filter(!(
-	(REF == "G" & ALT == "C") |
-	(REF == "C" & ALT == "G") |
-	(REF == "T" & ALT == "A") |
-	(REF == "A" & ALT == "T")
-	))
-  
-  # QC Step 2: Remove Multi-allelic Variants
-  # These are variants with more than two alleles.
-	dat <- dat %>% 
-	filter(!(nchar(REF) + nchar(ALT) > 2))	
-  
-  # QC Step 3: Exclude MHC Complex Region
-  # This region can be particularly complex and may need special handling.
-  dat <- dat %>% 
-    filter(!(CHR == 6 & POS > 25e6 & POS < 34e6))
-  
-  # QC Step 4: Minor Allele Frequency (MAF) Filter
-  # Remove SNPs with MAF below the threshold or above (1 - threshold).
-  if("MAF"%in%colnames(dat)){
-  dat <- dat %>% 
-    filter(MAF > MAF_threshold, MAF < 1 - MAF_threshold)
+  if(rm_strand){
+  	dat <- dat %>%
+  	filter(!(
+  	(REF == "G" & ALT == "C") |
+  	(REF == "C" & ALT == "G") |
+  	(REF == "T" & ALT == "A") |
+  	(REF == "A" & ALT == "T")
+  	))
   }
-  dat <- dat %>%
-  distinct(CHR_POS,.keep_all=TRUE)
+  # QC Step 2: Remove Multi-allelic Variants
+  if(rm_multi){
+    multi_allelic <- dat$CHR_POS[duplicated(dat$CHR_POS)]
+    if(length(multi_allelic)>0){
+      dat<-dat %>%filter(!(CHR_POS%in%multi_allelic))
+    }
+  }
+
+	# QC Step 3: Remove Indel if necessary
+  if(rm_indel){
+    dat <- dat %>% 
+      filter(!(nchar(REF) + nchar(ALT) > 2))	
+  }
+
+  # QC Step 4: Exclude MHC Complex Region
+  # This region can be particularly complex and may need special handling.
+  if(rm_mhc){
+    dat <- dat %>% 
+      filter(!(CHR == 6 & POS > 25e6 & POS < 34e6))
+  }
+
+  
+  # QC Step 5: Minor Allele Frequency (MAF) Filter
+  # Remove SNPs with MAF below the threshold or above (1 - threshold).
+  if(rm_maf){
+    if("MAF"%in%colnames(dat)){
+      dat <- dat %>% 
+        filter(MAF > MAF_threshold, MAF < 1 - MAF_threshold)
+    }
+  }
   return(dat)
 }
 ##############################################
@@ -359,8 +381,9 @@ organize_gwas <- function(a1, a2, element_names=c("data1", "data2")) {
 	  }
 	  
 	  # Identify multi-allelic SNPs
-	  multi_allelic <- nchar(df$ref) > 1 | nchar(df$alt) > 1
-	  if (any(multi_allelic)) {
+	  
+	  multi_allelic <- sum(duplicated(df$snp))
+	  if (multi_allelic>0) {
 		message("Warning: Detected multi-allelic SNPs. Consider reviewing or removing them.")
 	  }
 	  
