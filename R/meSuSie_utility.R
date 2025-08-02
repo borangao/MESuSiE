@@ -471,7 +471,7 @@ custom_theme <- function() {
 #' plots for each ancestry based on the results from MESuSiE.
 #'
 #' @param res The result object from MESuSiE.
-#' @param R_mat A list containing LD (Linkage Disequilibrium) matrices for each ancestry.
+#' @param R_mat A list containing r^2 matrices for each ancestry.
 #' @param summary_data A list of data frames for each ancestry containing at least SNP, Z (Z-scores), 
 #'     and possibly POS (position) columns.
 #'
