@@ -11,6 +11,23 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// mes_covariance_em
+Rcpp::List mes_covariance_em(const arma::mat& beta, const arma::mat& se2, arma::mat V, const arma::mat& prior, Rcpp::List configs, int maxiter, double tol);
+RcppExport SEXP _MESuSiE_mes_covariance_em(SEXP betaSEXP, SEXP se2SEXP, SEXP VSEXP, SEXP priorSEXP, SEXP configsSEXP, SEXP maxiterSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type se2(se2SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type configs(configsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(mes_covariance_em(beta, se2, V, prior, configs, maxiter, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // loglik_cpp
 double loglik_cpp(arma::vec V, const arma::mat& betahat, const arma::mat& shat2, const arma::mat& prior_weight, const int nancestry, arma::uvec diag_index, Rcpp::List config_list);
 RcppExport SEXP _MESuSiE_loglik_cpp(SEXP VSEXP, SEXP betahatSEXP, SEXP shat2SEXP, SEXP prior_weightSEXP, SEXP nancestrySEXP, SEXP diag_indexSEXP, SEXP config_listSEXP) {
@@ -41,10 +58,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mes_stable_mvlmm
+Rcpp::List mes_stable_mvlmm(const arma::mat& beta, const arma::mat& se2, const arma::mat& V);
+RcppExport SEXP _MESuSiE_mes_stable_mvlmm(SEXP betaSEXP, SEXP se2SEXP, SEXP VSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type se2(se2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    rcpp_result_gen = Rcpp::wrap(mes_stable_mvlmm(beta, se2, V));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mes_stable_loglik
+double mes_stable_loglik(const arma::mat& beta, const arma::mat& se2, const arma::mat& V, const arma::mat& prior, Rcpp::List configs);
+RcppExport SEXP _MESuSiE_mes_stable_loglik(SEXP betaSEXP, SEXP se2SEXP, SEXP VSEXP, SEXP priorSEXP, SEXP configsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type se2(se2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type V(VSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type configs(configsSEXP);
+    rcpp_result_gen = Rcpp::wrap(mes_stable_loglik(beta, se2, V, prior, configs));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_MESuSiE_mes_covariance_em", (DL_FUNC) &_MESuSiE_mes_covariance_em, 7},
     {"_MESuSiE_loglik_cpp", (DL_FUNC) &_MESuSiE_loglik_cpp, 7},
     {"_MESuSiE_mvlmm_reg", (DL_FUNC) &_MESuSiE_mvlmm_reg, 3},
+    {"_MESuSiE_mes_stable_mvlmm", (DL_FUNC) &_MESuSiE_mes_stable_mvlmm, 3},
+    {"_MESuSiE_mes_stable_loglik", (DL_FUNC) &_MESuSiE_mes_stable_loglik, 5},
     {NULL, NULL, 0}
 };
 

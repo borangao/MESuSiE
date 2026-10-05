@@ -55,6 +55,12 @@
 #' @param cor_threshold The threshold of min_abs_corr, defualt is 0.5
 #' 
 #' @param max_iter Maximum number of iterations to perform.
+#' @param optim_method Covariance optimizer: \code{"optim"} (unchanged default)
+#'   or the optional \code{"em"} estimator with stable Gaussian arithmetic.
+#' @param tol Outer ELBO tolerance; convergence requires a finite, nonnegative
+#'   increment smaller than this value, following updated SuSiE.
+#' @param em_max_iter Maximum inner EM iterations, used only for \code{"em"}.
+#' @param em_tol Absolute inner objective tolerance, used only for \code{"em"}.
 #' 
 #' @return An R6 object with pip, credible sets, and other features of the fine-mapping result. 
 #' \item{pip}{Vector of posterior inclusion probabilities.}
@@ -77,6 +83,11 @@
 #'   algorithm, which attempts to maximize the ELBO.}
 #' 
 #' \item{cs}{Estimated credible sets.}
+#' \item{converged}{Whether the outer nonnegative ELBO criterion was met.}
+#' \item{niter}{Number of outer iterations performed.}
+#' \item{em_calls, em_maxiter, em_fallbacks, em_status}{For \code{"em"}, counts of
+#'   inner calls, exhausted budgets, rejected updates, and last per-effect status.
+#'   Outer convergence does not imply converged inner optimization.}
 #' @examples
 #' library(MESuSiE)
 #' data(summ_stat_list)
@@ -84,7 +95,12 @@
 #' fit = meSuSie_core(LD_list,summ_stat_list,L = 10)
 #' @import R6 nloptr Rcpp RcppArmadillo Matrix progress
 #' @export
-meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,prior_weights=NULL,ancestry_weight=NULL,optim_method ="optim",estimate_residual_variance =F,max_iter =100,cor_method ="min.abs.corr",cor_threshold=0.5){
+meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,prior_weights=NULL,ancestry_weight=NULL,optim_method ="optim",estimate_residual_variance =F,max_iter =100,cor_method ="min.abs.corr",cor_threshold=0.5,tol=0.001,em_max_iter=100L,em_tol=1e-9){
+  stopifnot(optim_method %in% c("optim", "em"), is.finite(tol), tol > 0,
+            is.finite(max_iter), max_iter >= 1, max_iter == as.integer(max_iter))
+  if (optim_method == "em")
+    stopifnot(is.finite(em_max_iter), em_max_iter >= 1,
+              em_max_iter == as.integer(em_max_iter), is.finite(em_tol), em_tol > 0)
   
   cat("*************************************************************\n
   Multiple Ancestry Sum of Single Effect Model (MESuSiE)          \n
@@ -116,6 +132,16 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
   
   cat("# Create MESuSiE object \n")
   meSuSieObject_obj<-meSuSieObject$new(n_snp,L,n_ancestry,residual_variance,used_weights,optim_method,estimate_residual_variance,max_iter,names(summary_stat_list))
+  meSuSieObject_obj$converged <- FALSE
+  meSuSieObject_obj$niter <- 0L
+  if (optim_method == "em") {
+    meSuSieObject_obj$em_max_iter <- em_max_iter
+    meSuSieObject_obj$em_tol <- em_tol
+    meSuSieObject_obj$em_calls <- 0L
+    meSuSieObject_obj$em_maxiter <- 0L
+    meSuSieObject_obj$em_fallbacks <- 0L
+    meSuSieObject_obj$em_status <- vector("list", L)
+  }
   cat("# Start data analysis \n")
   
   n_iter = 0
@@ -142,7 +168,14 @@ meSuSie_core<-function(R_mat_list,summary_stat_list,L,residual_variance=NULL,pri
 
     updated_sigma2 = meSuSieObject_obj$update_residual_variance(meSuSieData_obj,iter)
     
-    if((meSuSieObject_obj$ELBO[iter+1] - meSuSieObject_obj$ELBO[iter])<0.001){
+    meSuSieObject_obj$niter <- iter
+    if (!is.finite(meSuSieObject_obj$ELBO[iter+1]))
+      stop("MESuSiE produced a nonfinite ELBO")
+    delta <- meSuSieObject_obj$ELBO[iter+1] - meSuSieObject_obj$ELBO[iter]
+    if (is.finite(delta) && delta < -tol)
+      warning(sprintf("ELBO decreased by %.3g at iteration %d", -delta, iter))
+    if (.mesusie_elbo_converged(delta, tol)) {
+      meSuSieObject_obj$converged <- TRUE
       break
     }
     if(meSuSieObject_obj$estimate_residual_variance==TRUE){
@@ -452,7 +485,9 @@ single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
   
   betahat = shat2 * Xty_standardized
   
-  if(meSuSieObject_obj$estimate_prior_method =="optim"){    
+  if (meSuSieObject_obj$estimate_prior_method == "em") {
+    V_mat <- .mesusie_update_covariance_em(betahat, shat2, meSuSieObject_obj, l_index)
+  } else if(meSuSieObject_obj$estimate_prior_method =="optim"){
 	opt_par<-pre_optim(N_ancestry,-30,10)		
 	if(N_ancestry==2){		 
 		update_V<-optim(opt_par$inital_par,fn = loglik_cpp,gr=NULL,betahat=betahat,shat2=shat2,prior_weight=meSuSieObject_obj$pi,nancestry =opt_par$nancestry,diag_index = opt_par$diag_index,config_list =column_config,method = "L-BFGS-B",lower=opt_par$lower_bound,upper=opt_par$upper_bound)
@@ -468,7 +503,9 @@ single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
 	if(length(x)==1){
 		uni_reg(betahat[,x],shat2[,x],V_mat[x,x])
 	}else if(length(x)>1){
-		mvlmm_reg(betahat[,x],shat2[,x],V_mat[x,x]) 
+		if (meSuSieObject_obj$estimate_prior_method == "em")
+		  mes_stable_mvlmm(betahat[,x,drop=FALSE],shat2[,x,drop=FALSE],V_mat[x,x,drop=FALSE])
+		else mvlmm_reg(betahat[,x],shat2[,x],V_mat[x,x])
 		}
 	})
 
@@ -481,6 +518,4 @@ single_effect_regression<-function(XtR,XtX.diag, meSuSieObject_obj,l_index){
 	
   return(list(alpha = softmax_out$alpha_wmulti,mu1_multi = mu1_multi,mu2_multi = mu2_multi,lbf_multi = lbf,V = V_mat,loglik =softmax_out$loglik,b1b2 = b1b2))
 }
-
-
 

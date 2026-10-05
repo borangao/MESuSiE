@@ -26,6 +26,33 @@ See [Tutorial](https://borangao.github.io/meSuSie_Analysis/) for detailed docume
 
 ## Reproduce
 
+### Optional covariance EM
+
+The author covariance optimizer remains the default (`optim_method="optim"`).
+An optional `optim_method="em"` uses permutation-equivariant covariance EM
+updates and stable Gaussian likelihood/posterior arithmetic:
+
+```r
+fit <- meSuSie_core(LD_list, summ_stat_list, L=3, optim_method="em",
+                   em_max_iter=100, em_tol=1e-9)
+fit$converged       # Outer stopping only
+fit$em_maxiter      # Inner calls that exhausted the iteration budget
+fit$em_status      # Last inner status for each effect
+```
+
+Both optimizers now require a finite `0 <= ELBO change < tol` for outer
+convergence, following [updated SuSiE](https://github.com/stephenslab/susieR/commit/b5c71c1e7c11b33f82ec230fbaa0c386fd90c55b).
+A decrease is not convergence. `converged=FALSE` distinguishes a returned fit
+that reaches `max_iter`. The default `tol` is unchanged at .001.
+Finite-budget EM is not identical to the original optimizer; outer convergence
+does not imply converged inner maximization, a global optimum, or corrected LD.
+The EM update floors covariance eigenvalues at 1e-12 and retains the previous
+covariance if the proposed update lowers the evaluated likelihood.
+
+Base-R numerical and population-permutation regressions can be run after
+installation with `Rscript tests/numerical-regressions.R`. The optional kernels
+reuse MIT-licensed credtools code (notice in `inst/CREDTOOLS_LICENSE`).
+
 See [Repository](https://doi.org/10.5281/zenodo.8411004) for reproducing the simulation and real data analysis in the manuscript. 
 
 

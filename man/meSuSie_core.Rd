@@ -15,7 +15,10 @@ meSuSie_core(
   estimate_residual_variance = F,
   max_iter = 100,
   cor_method = "min.abs.corr",
-  cor_threshold = 0.5
+  cor_threshold = 0.5,
+  tol = 0.001,
+  em_max_iter = 100L,
+  em_tol = 1e-9
 )
 }
 \arguments{
@@ -46,6 +49,16 @@ encourage the finding of ancestry-specific causal variant}
 estimated; otherwise it is fixed.}
 
 \item{max_iter}{Maximum number of iterations to perform.}
+
+\item{optim_method}{Covariance optimizer: \code{"optim"} (unchanged default)
+or the optional \code{"em"} estimator with stable Gaussian arithmetic.}
+
+\item{tol}{Outer ELBO tolerance; convergence requires a finite, nonnegative
+increment smaller than this value, following updated SuSiE.}
+
+\item{em_max_iter}{Maximum inner EM iterations, used only for \code{"em"}.}
+
+\item{em_tol}{Absolute inner objective tolerance, used only for \code{"em"}.}
 
 \item{cor_method}{The method to determine the 95% credible set using correlations among 
 SNPs in the region. The common used can be minimum/mean/median of absolute value of correlation
@@ -89,6 +102,11 @@ column represents the PIP of a scenario.}
   algorithm, which attempts to maximize the ELBO.}
 
 \item{cs}{Estimated credible sets.}
+\item{converged}{Whether the outer nonnegative ELBO criterion was met.}
+\item{niter}{Number of outer iterations performed.}
+\item{em_calls, em_maxiter, em_fallbacks, em_status}{For \code{"em"}, counts of
+inner calls, exhausted budgets, rejected updates, and last per-effect status.
+Outer convergence does not imply converged inner optimization.}
 }
 \description{
 Performs a multiple ancestry sum of the single effects
